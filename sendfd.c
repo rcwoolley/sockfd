@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
         }
 
         printf("after accept\n");
-	rc = sendfd(sockfd, filefd);
+	rc = sendfd(cl, filefd);
     
         if (rc == -1) {
             perror("sendfd failure");
