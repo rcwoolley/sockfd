@@ -18,11 +18,13 @@ void intHandler(int signum) {
     doLoop = 0;
 }
 
+#define BUFSIZE 100
+
 int main(int argc, char** argv) {
     struct sockaddr_un addr;
     char *socket_path = NULL;
     char *default_sock = "socket";
-    char buf[100];
+    char buf[BUFSIZE];
     int sockfd, filefd, cl, rc;
     struct sigaction new_action, old_action;
 
