@@ -1,10 +1,17 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
+#include <signal.h>
 #include "scm_functions.h"
+
+static volatile int doLoop = 1;
+
+void intHandler(int signum) {
+    doLoop = 0;
+}
 
 #define BUFSIZE 100
 
@@ -13,18 +20,38 @@ int main(int argc, char** argv) {
     char *socket_path = NULL;
     char *default_sock = "socket";
     char buf[BUFSIZE];
-    int sockfd, filefd, rc, bytes;
+    int sockfd, filefd, cl, rc, bytes;
+    struct sigaction new_action, old_action;
 
-    if (argc < 2) {
-        printf("Usage: recvfd <command> [SOCKET]\n");
+    new_action.sa_handler = intHandler;
+    sigemptyset(&new_action.sa_mask);
+    new_action.sa_flags = 0;
+
+    sigaction(SIGINT, &new_action, NULL);
+    if (old_action.sa_handler != SIG_IGN)
+        sigaction (SIGINT, &new_action, NULL);
+
+    sigaction (SIGHUP, NULL, &old_action);
+    if (old_action.sa_handler != SIG_IGN)
+        sigaction (SIGHUP, &new_action, NULL);
+
+    sigaction (SIGTERM, NULL, &old_action);
+    if (old_action.sa_handler != SIG_IGN)
+        sigaction (SIGTERM, &new_action, NULL);
+
+    if (argc != 2) {
+        printf("Usage: recvfd <SOCKET>\n");
         exit(-1);
     }
 
+    /*
     if (argc > 2) {
 	socket_path = argv[2];
     } else {
-        socket_path = default_sock;
+        socket_path = default_sock; 
     }
+    */
+    socket_path = argv[1];
 
     if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1 ) {
 	perror("socket error");
@@ -35,23 +62,45 @@ int main(int argc, char** argv) {
     addr.sun_family = AF_UNIX;
     strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path)-1);
 
-    if (connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-        perror("connect error");
+    if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+        perror("bind error");
+        unlink(socket_path);
         exit(-1);
     }
 
-    if ((filefd = recvfd(sockfd)) == -1) {
-        printf("recvfd failed: %d\n", filefd);
+    if (listen(sockfd, 1) == -1) {
+        perror("listen error");
+        unlink(socket_path);
         exit(-1);
     }
 
-    lseek(filefd, 0, SEEK_SET);
+    while (doLoop == 1) {
+        if ( (cl = accept(sockfd, NULL, NULL)) == -1) {
+            perror("accept error");
+            continue;
+        }
 
-    memset(buf, '\0', BUFSIZE);
-    while(bytes = read(filefd, buf, BUFSIZE-1) > 0) {
-        fprintf(stdout, buf, bytes);
-        memset(buf, '\0', BUFSIZE);
+	filefd = recvfd(cl);
+
+        if (filefd == -1) {
+            perror("recvfd failure");
+            close(cl);
+
+            exit(-1);
+        }
+        else {
+            lseek(filefd, 0, SEEK_SET);
+        
+            memset(buf, '\0', BUFSIZE);
+            while(bytes = read(filefd, buf, BUFSIZE-1) > 0) {
+                fprintf(stdout, buf, bytes);
+                memset(buf, '\0', BUFSIZE);
+            }
+
+            close(cl);
+        }
     }
+    unlink(socket_path);
 
     return 0;
 }
