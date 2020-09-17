@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 
     filefd = open(argv[1], O_RDONLY);
 
-    if (listen(sockfd, 5) == -1) {
+    if (listen(sockfd, 1) == -1) {
         perror("listen error");
         unlink(socket_path);
         exit(-1);

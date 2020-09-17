@@ -45,11 +45,11 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
+    lseek(filefd, 0, SEEK_SET);
+
     memset(buf, '\0', BUFSIZE);
     while(bytes = read(filefd, buf, BUFSIZE-1) > 0) {
-        printf("<");
         fprintf(stdout, buf, bytes);
-        printf(">\n");
         memset(buf, '\0', BUFSIZE);
     }
 
