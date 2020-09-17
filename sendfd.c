@@ -66,6 +66,7 @@ int main(int argc, char** argv) {
 
     if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
         perror("bind error");
+        unlink(socket_path);
         exit(-1);
     }
 
@@ -73,6 +74,7 @@ int main(int argc, char** argv) {
 
     if (listen(sockfd, 5) == -1) {
         perror("listen error");
+        unlink(socket_path);
         exit(-1);
     }
 
@@ -87,11 +89,13 @@ int main(int argc, char** argv) {
 	rc = sendfd(sockfd, filefd);
     
         if (rc == -1) {
-            perror("send_fd failure");
+            perror("sendfd failure");
+            close(cl);
+            unlink(socket_path);
             exit(-1);
         }
         else if (rc == 0) {
-            printf("send_fd success\n");
+            printf("sendfd success\n");
             close(cl);
         }
     }
