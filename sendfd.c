@@ -13,8 +13,6 @@
 static volatile int doLoop = 1;
 
 void intHandler(int signum) {
-    
-    printf("SIGINT\n");
     doLoop = 0;
 }
 
@@ -78,14 +76,12 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
-
     while (doLoop == 1) {
         if ( (cl = accept(sockfd, NULL, NULL)) == -1) {
             perror("accept error");
             continue;
         }
 
-        printf("after accept\n");
 	rc = sendfd(cl, filefd);
     
         if (rc == -1) {
