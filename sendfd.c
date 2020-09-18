@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
-    filefd = open(argv[2], O_RDONLY);
+    filefd = open(argv[2], O_RDWR);
 
     if ((rc = sendfd(sockfd, filefd, argv[2])) == -1) {
         perror("sendfd failed");
