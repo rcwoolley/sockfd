@@ -98,6 +98,7 @@ int main(int argc, char** argv) {
 
             exit(-1);
         }
+#ifdef DEBUG
         else {
             lseek(filefd, 0, SEEK_SET);
 
@@ -109,6 +110,7 @@ int main(int argc, char** argv) {
 
             close(cl);
         }
+#endif /* DEBUG */
     }
     unlink(socket_path);
 
