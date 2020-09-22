@@ -34,8 +34,13 @@
 #include <assert.h>
 #include "passfd.h"
 
+#ifdef DEBUG
 #define ATF_REQUIRE(x) assert(x)
 #define ATF_REQUIRE_MSG(a,b,...) assert(a)
+#else
+#define ATF_REQUIRE(x)
+#define ATF_REQUIRE_MSG(a,b,...)
+#endif /* DEBUG */
 #define SCM_CREDS SCM_CREDENTIALS
 
 static void
