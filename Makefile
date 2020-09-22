@@ -27,6 +27,9 @@ PROGRAMS=sendfd recvfd
 
 all: $(PROGRAMS)
 
+debug: CFLAGS += -DDEBUG -g
+debug: all
+
 unix_passfd_test.c:
 	curl "https://svnweb.freebsd.org/base/stable/12/tests/sys/kern/unix_passfd_test.c?view=co" -o $@
 
