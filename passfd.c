@@ -32,6 +32,8 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
+#include <unistd.h>
+#include <linux/limits.h>
 #include "passfd.h"
 
 #ifdef DEBUG
@@ -42,6 +44,8 @@
 #define ATF_REQUIRE_MSG(a,b,...)
 #endif /* DEBUG */
 #define SCM_CREDS SCM_CREDENTIALS
+
+#define MAXNAMELEN	4096	/* maximum length of the name of fd being sent by sendfd */
 
 static void
 putfds(char *buf, int fd, int nfds)
@@ -83,14 +87,20 @@ sendfd_payload(int sockfd, int send_fd, void *payload, size_t paylen)
 	return ((size_t)len);
 }
 
-int sendfd(int sockfd, int send_fd)
+int sendfd(int sockfd, int send_fd, char *filepath)
 {
-        size_t len;
-        char ch;
+	size_t len;
+	char *ch = NULL;
+	size_t namelen;
 
-        ch = 0;
-        len = sendfd_payload(sockfd, send_fd, &ch, sizeof(ch));
-        return len;
+	namelen = strnlen(filepath, PATH_MAX);
+
+	if ((namelen == 0) || (namelen > MAXNAMELEN)) {
+		return -1;
+	}
+
+	len = sendfd_payload(sockfd, send_fd, filepath, namelen);
+	return len;
 }
 
 static void
@@ -155,12 +165,12 @@ recvfd_payload(int sockfd, int *recv_fd, void *buf, size_t buflen,
 #endif /* 0 */
 }
 
-int recvfd(int sockfd)
+int recvfd(int sockfd, char **buf, int *buflen)
 {
         int recv_fd = 0;
-        char ch = 0;
+        char *ch = NULL;
 
-        recvfd_payload(sockfd, &recv_fd, &ch, sizeof(ch),
+        recvfd_payload(sockfd, &recv_fd, *buf, *buflen,
             CMSG_SPACE(sizeof(int)));
 
         return recv_fd;

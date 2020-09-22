@@ -25,5 +25,5 @@
  * SUCH DAMAGE.
  */
 
-int sendfd(int sockfd, int send_fd);
-int recvfd(int sockfd);
+int sendfd(int sockfd, int send_fd, char *filepath);
+int recvfd(int sockfd, char **buf, int *buflen);

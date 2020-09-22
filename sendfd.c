@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     socket_path = argv[1];
 
     if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1 ) {
-	perror("socket error");
+        perror("socket error");
         exit(-1);
     }
 
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
 
     filefd = open(argv[2], O_RDONLY);
 
-    if ((rc = sendfd(sockfd, filefd)) == -1) {
+    if ((rc = sendfd(sockfd, filefd, argv[2])) == -1) {
         perror("sendfd failed");
         exit(-1);
     }

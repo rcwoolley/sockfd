@@ -18,6 +18,7 @@
 
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <linux/limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -36,8 +37,8 @@ void intHandler(int signum) {
 int main(int argc, char** argv) {
     struct sockaddr_un addr;
     char *socket_path = NULL;
-    char buf[BUFSIZE];
-    int sockfd, filefd, cl, rc, bytes;
+    char *buf = NULL;
+    int sockfd, filefd, cl, rc, bytes, buflen;
     struct sigaction new_action, old_action;
 
     new_action.sa_handler = intHandler;
@@ -64,7 +65,7 @@ int main(int argc, char** argv) {
     socket_path = argv[1];
 
     if ((sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1 ) {
-	perror("socket error");
+        perror("socket error");
         exit(-1);
     }
 
@@ -84,13 +85,25 @@ int main(int argc, char** argv) {
         exit(-1);
     }
 
+    buflen = PATH_MAX;
+    buf = malloc(buflen);
+    if (buf == NULL) {
+        perror("malloc error");
+        unlink(socket_path);
+        exit(-1);
+    }
+
     while (doLoop == 1) {
         if ( (cl = accept(sockfd, NULL, NULL)) == -1) {
             perror("accept error");
             continue;
         }
 
-	filefd = recvfd(cl);
+    filefd = recvfd(cl, &buf, &buflen);
+
+#ifdef DEBUG
+    printf("DEBUG: Received fd with name: %s\n", buf);
+#endif /* DEBUG */
 
         if (filefd == -1) {
             perror("recvfd failure");
